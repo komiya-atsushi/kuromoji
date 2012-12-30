@@ -1,11 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.atilika.kuromoji</groupId>
 	<artifactId>kuromoji</artifactId>
 	<packaging>jar</packaging>
 	<version>0.7.8-SNAPSHOT</version>
 	<name>Kuromoji Japanese Morphological Analyzer</name>
+
+	<!-- mvn -DskipTests=true -Ddownload=true package -P use-unidic -->
 
 	<organization>
 		<name>ATILIKA</name>
@@ -37,15 +39,35 @@
 		</developer>
 	</developers>
 
-	<properties>
-		<kuromoji.dict.format>ipadic</kuromoji.dict.format>
-		<kuromoji.dict.url>http://atilika.com/releases/mecab-ipadic/mecab-ipadic-2.7.0-20070801.tar.gz</kuromoji.dict.url>
-		<kuromoji.dict.dir>dictionary/mecab-ipadic-2.7.0-20070801</kuromoji.dict.dir>
-		<kuromoji.dict.encoding>euc-jp</kuromoji.dict.encoding>
+	<profiles>
+		<profile>
+			<id>use-ipadic</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<kuromoji.dict.format>ipadic</kuromoji.dict.format>
+				<kuromoji.dict.url>http://atilika.com/releases/mecab-ipadic/mecab-ipadic-2.7.0-20070801.tar.gz</kuromoji.dict.url>
+				<kuromoji.dict.dir>dictionary/mecab-ipadic-2.7.0-20070801</kuromoji.dict.dir>
+				<kuromoji.dict.encoding>euc-jp</kuromoji.dict.encoding>
 
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-	</properties>
+				<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+				<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+			</properties>
+		</profile>
+		<profile>
+			<id>use-unidic</id>
+			<properties>
+				<kuromoji.dict.format>unidic</kuromoji.dict.format>
+				<kuromoji.dict.url>http://sourceforge.jp/frs/redir.php?m=jaist&amp;f=%2Funidic%2F57618%2Funidic-mecab-211_src.zip</kuromoji.dict.url>
+				<kuromoji.dict.dir>dictionary/unidic-mecab-211_src</kuromoji.dict.dir>
+				<kuromoji.dict.encoding>utf-8</kuromoji.dict.encoding>
+
+				<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+				<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+			</properties>
+		</profile>
+	</profiles>
 
 	<build>
 		<plugins>
@@ -108,13 +130,30 @@
 						<phase>generate-resources</phase>
 						<configuration>
 							<target if="download">
-								<echo message="Downloading dictionary" />
-								<delete dir="dictionary" />
-								<mkdir dir="dictionary" />
-								<get src="${kuromoji.dict.url}" dest="dictionary/mecab-ipadic-2.7.0-20070801.tar.gz"
-									verbose="true" />
-								<untar src="dictionary/mecab-ipadic-2.7.0-20070801.tar.gz"
-									dest="dictionary" compression="gzip" />
+								<taskdef resource="net/sf/antcontrib/antcontrib.properties"
+										 classpathref="maven.compile.classpath"/>
+								<if>
+									<equals arg1="${kuromoji.dict.format}" arg2="unidic"/>
+									<then>
+										<echo message="Downloading unidic"/>
+										<delete dir="dictionary"/>
+										<mkdir dir="dictionary"/>
+										<get src="${kuromoji.dict.url}" dest="dictionary/unidic-mecab-211_src.zip"
+											 verbose="true"/>
+										<unzip src="dictionary/unidic-mecab-211_src.zip"
+											   dest="dictionary"/>
+									</then>
+									<else>
+										<echo message="Downloading dictionary"/>
+										<delete dir="dictionary"/>
+										<mkdir dir="dictionary"/>
+										<get src="${kuromoji.dict.url}"
+											 dest="dictionary/mecab-ipadic-2.7.0-20070801.tar.gz"
+											 verbose="true"/>
+										<untar src="dictionary/mecab-ipadic-2.7.0-20070801.tar.gz"
+											   dest="dictionary" compression="gzip"/>
+									</else>
+								</if>
 							</target>
 						</configuration>
 						<goals>
@@ -150,6 +189,22 @@
 			<version>4.7</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>ant-contrib</groupId>
+			<artifactId>ant-contrib</artifactId>
+			<version>1.0b3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>ant</groupId>
+					<artifactId>ant</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.ant</groupId>
+			<artifactId>ant-nodeps</artifactId>
+			<version>1.8.1</version>
+		</dependency>
 	</dependencies>
 
 	<distributionManagement>
@@ -166,7 +221,7 @@
 			<name>ATILIKA Open Source Snaphots</name>
 			<url>http://atilika.org/nexus/content/repositories/atilika-snapshots/</url>
 		</repository>
- --> 
+ -->
 	</distributionManagement>
 
 
